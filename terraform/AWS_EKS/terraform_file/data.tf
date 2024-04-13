@@ -1,0 +1,1 @@
+data "aws_caller_identity" "current" {} # 계정의 ID를 참조하는데 사용

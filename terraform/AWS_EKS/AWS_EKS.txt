@@ -1,0 +1,57 @@
+AWS EKS
+    kubernetes 컨트롤 플레인을 구성하거나 유지할 필요 없이 AWS에서 kubernetes를 쉽게 실행할 수 있는 관리형 서비스
+
+    사용하지 않으면 단점
+        - Control plane 관리의 부담
+            > HA 구현, EC2 운영 등...
+        - 이슈 발생시 support의 부재
+        - Managed Node Group 없음
+        - 버전 업데이트의 부담
+
+    사용시 단점
+        - 보안 요구사항
+        - 워크로드 요구사항
+        - cuntomize 여지
+
+    다양한 컴퓨팅 옵션
+        EKS
+            - 일반 EC2
+            - 비용 옵션
+            - 서버리스 옵션
+            - 비즈니스 요구사항
+
+    kubernetes on AWS의 네트워크 과제 (VPC CNI)
+        - ec2 네트워킹과 security group에 상응하는 네트워크 정책
+        - VPC 네트워킹에서 활용하는 security best practice를 그대로 kubenetes환경에도 적용 (vpc flowlog, security group, private link 등)
+
+    VPC CNI (Container Network Interface)를 고려한 최대 pod 개수
+        - Max Pods = ENI x (ENI 당 지원하는 IPv4 개수 -1) + 2
+        ex) m5.large
+            ENI = 3, ENI당 지원하는 IPv4 개수 = 10
+            3 x (10 - 1) + 2 = 29
+        각 ENI의 첫 번째 IP는 파드를 위해 사용할 수 없음
+        호스트 네트워크 관련 2개 파드 포함 개수 (AWS ENI와 kube-proxy)
+
+        
+AWS ECS 
+    - 오픈소스 확장의 한계
+    - 표준이라고 보긴 어려운 mainfest 관리 (Terraform)
+    - 인재 채용의 한계
+    - 추상화에 따른 트러블슈팅 한계
+    - 그럼에도 불구하고, 비즈니스 요구사항에 따라 더 나은 선택이 되기도함
+
+AWS에서 kubenetes 운영
+    - persistent storage 옵션
+        > Amazon EBS CSI driver
+        > Amazon EFS CSI driver
+        > Amazon FSx for Lustre CSI driver
+
+AWS EKS 생성방법
+    - console, IaC(AWS CDK, Terraform, RANCHER), eksctl
+    
+kubeconfig 등록
+    - aws --profile <profile이름> eks --region ap-northeast-2 update-kubeconfig --name <cluster 이름> --alias <cluster 이름>
+    - 등록된 kubeconfig확인
+        $ cat ~/.kube/config
+    - context 변경
+        $ kubectl config use-context <cluster 이름>
