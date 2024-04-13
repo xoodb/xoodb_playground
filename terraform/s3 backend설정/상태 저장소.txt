@@ -1,0 +1,19 @@
+backend 
+terraform은 영구적인 state data파일 관리가 필요
+backend = state data파일이 저장되는 위치
+[ .terraform.lock.hcl ]
+
+backend종류
+local : disk (hdd, sdd) 기본
+remote
+    terraform cloud
+    aws s3
+    kubernetes secret
+    postgres db
+    gitlab
+
+remote backend 문제
+s3 가팅 누구든 볼 수 있는 저장소면 민감정보 pw,key 는 분리 필요
+민감 정보는 환경 변수로 분리하여 backend-config 옵션을 통해 사용하는걸 권장
+
+s3 생성 후 backend로 등록!
