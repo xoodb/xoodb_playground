@@ -1,0 +1,18 @@
+terraform fmt : 테라폼 포맷 (탭, 띄워쓰기) 정렬
+
+terraform init : 해당 폴더 플러그인 등 다운로드 
+
+> module block 이 추가/수정/삭제 되면 무조건 실행
+
+terraform plan : 파일 내용 검토
+
+terraform apply : 파일 내용 기반 생성
+
+terraform validate : 명령어 오류 확인
+
+terraform graph : 의존성을 text 형태로 볼 수 있음
+
+module에 코드를 이전한걸 테라폼은 인식 x
+
+
+https://registry.terraform.io/providers/hashicorp/aws/latest/docs 테라폼 명령어 문서
