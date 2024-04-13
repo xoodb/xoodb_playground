@@ -1,0 +1,8 @@
+terraform을 cloud를 통해 관리할 수 있게 해주는 서비스
+실행환경과 state를 직접 관리
+    terraform을 위한 인스턴스나 저장소를 따로 운영할 필요가 없음
+
+organization : github organization와 동일한 기능
+workspace : github repository와 동일한 기능
+    dev, prd workspace 2개로 구성
+    project A, B workspace 2개로 구성 가능
