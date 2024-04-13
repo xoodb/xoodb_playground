@@ -1,0 +1,277 @@
+kubernetes 오브젝트
+    - kubernetes 시스템 내에서 영속성을 가지는 오브젝트
+    - 클러스터의 의도한 상태를 나타내기 위해 오브젝트를 이용
+    - status 필드는 kubernetes 시스템과 컴포넌트에 의한 오브젝트의 현재 상태를 나타내며, kubernetes control plane은 이 status를 사용자가 의도한 상태와 일치시키기 위해 끊임없이 / 능동적으로 관리
+        > 의도한 상태
+            ．오브젝트에 대한 기본적인 정보와 의도한 상태를 기술한 오브젝트 spec을 제시
+            ．오브젝트 생성을 위한 kubernetes API 요청은 JSON 형식 정보를 포함
+            ．대부분의 경우 정보를 .yaml파일로 kubectl에 제공
+            ．kubectl은 API 요청이 이루어질 때, JSON형식으로 정보를 변환
+
+    - kubectl apply 
+        > 선언적 형태 (Declarative) [멱등성]
+        > 오브젝트가 없으면 create, 있으면 replace하는 등 더 유연하고 지능적으로 동작
+
+    - kubectl create, replace
+        > 명령적 형태
+        > kubectl run --image=nginx nginx
+        > kubectl scale deployment nginx --replicas=3
+
+    - YAML의 기본 구조
+        > apiVersion (string) : 쿠버네티스의 api 버전
+        > kind (string) : 오브젝트의 종류 기술 [object, pod ...]
+        > metadata (dictionary) : 오브젝트에 부여할 이름
+        > spec (dictionary) : 만들고자 하는 오브젝트의 상태를 기술
+        > status (dictionary) : 오브젝트의 실제 상태를 기술, 쿠버네티스 컨트롤 플레인은 오브젝트의 실제 상태를 의도한 상태에 일치시키기 방향으로 동작
+
+
+NODE (Worker node)
+    - 워크로드가 돌아가는 컨테이너를 배치하는 물리(가상)머신
+    - control plane에 의해 관리
+    - 일반적인 운영환경에서는 multi node로 운영
+    - 각 노드는 kubelet / container-runtime / kube-proxy 가 포함
+
+    - 노드 상태 [ Ready, Diskpressure, MemoryPressure, PIDPressure, NetworkUnavailable ]
+
+    - cordon 명령어 : pod들이 해당 node에 스케줄링 되지않도록 격리할때 사용하는 명령어, 오래 유지하면 drain 된다
+      uncordon : cordon 실행 취소
+        > kubectl cordon <node name>
+    - drain 명령어 : cordon node에 있는 pod들을 다른 정상 node로 이동 시키고 클러스터에서 해당 node를 제거
+
+
+Namespace ( 하나의 클러스터 내에서 복수의 가상 클러스터를 지원하는 개념 )
+    - 동일 물리 클러스터를 기반으로 하는 복수의 가상 클러스터를 지원하는 개념.
+    - 클러스터를 논리적으로 나누고 액세스를 제한하여 리소스를 생성, 관리
+    - 논리적으로 구분이 되지만 격리가 되는 것은 아님. (격리를 위해서는 network policy와 같은 다른 오브젝트를 추가로 사용해야함)
+
+    - 기본 Namespace ex
+        > default - pod, deployment가 생성 될 때 기본적으로 생성되는 Namespace
+        > kube-system - DNS, kube-proxy나 kubernetes dashboard 처럼 시스템 제어 리소스가 사용하는 Namespace
+        > kube-public - 전체 클러스터 리소스에 대한 가시성을 제공 하는 경우 사용 (일반적으로 사용 x)
+    - custom Namespace
+        > prometheus, argo, istio 등등의 시스템 관련 솔루션들은 독자 Namespace를 할당
+        > microservice 별로 Namespace를 할당하여 논리적으로 분리
+
+    - Namespace & resource quota YAML 구조 [ https://kubernetes.io/docs/tasks/administer-cluster/namespaces-walkthrough ]
+        > resource quota는 Namespace에 할당할 수 있는 리소스를 제한하는 역할
+        > namespace 생성 및 확인 명령어
+            $ kubectl create ns my-app
+            $ kubectl get ns --show-labels : 라벨 확인
+            $ kubectl delete ns my-app
+
+        > 특정 ns내에 있는 자원 확인
+            $ kubectl get pod -n kube-system
+            $ kubectl get all -n kube-system
+
+        > 모든 ns내의 자원을 확인
+            $ kubectl get all -A
+
+
+Pod [ https://kubernetes.io/ko/docs/concepts/workloads/pods/ ]
+    - 사실상 컨테이너를 담은 가상 머신
+    - 최소단위 쿠버네티스 객체
+    - docker 컨테이너와는 조금 다르게, pod는 하나 이상의 컨테이너를 포함 가능s
+    - 애플리케이션 컨테이너 (하나 또는 다수), 스토리지, 네트워크 등의 정보를 포함
+    - pod의 디자인 패턴 (sidecar, Adapter, Ambessador)
+    - pod 실행 
+        $ kubectl run nginx --image=nginx
+        $ kubectl run nginx2 --image=nginx --dry-run=client -o yaml > pod.yaml
+    - pod label 설정
+        $ kubectl label pods nginx app=front-end # code로 업데이트하고 apply 하는데 IaC유지에 용의함
+
+
+replicaset [ https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/ ]
+    - pod의 레플리카를 생성하고 지정한 pod 수를 유지하려는 리소스
+    - self-healing, scalable, desired state
+    - 기존의 replicaset controller 에서 replicaset으로 변경
+    - replicaset 생성 확인
+        $ kubectl apply -f test-replicaset.yaml
+        $ kubectl get re
+        $ kubernetes get rs -o wide
+
+        $ kubectl get pod -l type=front-end --show-labels : replicaset와 연결된 pod 확인
+
+        $ kubectl delete pod <pod 명> : pod를 삭제해도 replica 숫자와 같아지기 위해 새로 생성됨
+
+        $ kubectl scale replicaset myapp-replicaset --replicas 6 : 레플리카 pod 6개로 정의 ( 해당 명령어보다 yaml파일로 apply 하기 )
+
+
+deployment [ https://kubernetes.io/docs/concepts/workloads/controllers/deployment/ ]
+    - 복제된(replicated) aovmfflzpdltus(pod)을 관리하는 오브젝트
+    - 롤링 업데이트나 롤백 등을 구현하는 리소스
+    - 배포 전략
+        > recreate
+        > rollingupdate
+            · maxUnavailable : 업데이트중 동시 정지가 가능한 pod수 [ 절대값 or % ]
+            · maxSurge : 업데이트중 동시에 생성할 수 있는 최대 pod수 [ 〃 ]
+    - deployment 생성 확인
+        $ kubectl apply -f deploy.yaml --record : 어떤 명령어를 실행하고 업데이트 햇는지 이력 저장 (--record)
+        $ kubectl get deploy
+        $ kubectl describe deploy myapp-deployment
+        $ kubectl get rs
+        $ kubtctl get pod
+
+        $ kubectl set image deployment myapp-deployment nginx-container=nginx:1.23 --record : 이미지 버전 업데이트
+        $ kubectl rollout history deployment myapp-deployment : 명령어 이력 확인
+        $ kubectl rollout history deployment myapp-deployment --revision 1 : 1번 리비전 자세히 보기
+        $ kubectl rollout undo deployment myapp-deployment --to-revision 1 : 1번 리비전으로 롤백하기
+
+
+Daemonset [ https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/ ]
+    - 클러스터의 각 노드에 pod를 하나씩 띄울때 사용하는 오브젝트 ( 실행시 각 노드마다 생성 )
+    - 로그수집기를 실행하거나 노드를 모니터링하는 모니터링용 데몬등 클러스터 전체에 ★항상 실행★시켜 두어야 하는 pod를 실행하는데 사용
+    - ex) kube-proxy, fluent-bit ...
+    - daemonset 업데이트
+        $ kubectl apply -f daemonset.yaml
+        $ kubectl get ds
+        $ kubectl get pod -A -l app=monitoring-agent -o wide
+
+        $ kubectl restart daemonset/monitoring-daemon
+        $ kubectl rollout restart daemonset/monitoring-daemon
+
+
+Service [ https://kubernetes.io/docs/concepts/services-networking/service/ ]
+    - Pod 집합과 같은 어플리케이션에 접근 경로나 Service Discovery를 제공
+    - Pod을 외부 네트워크에 연결하고, pod으로의 연결을 로드밸런싱하는 네트워크 오브젝트
+    - 하나의 Microservice 단위
+    - 서비스이름.네임스페이스.svc.cluster.local 이라는 FQDN이 생성
+    - service에 연결되는 Pod는 Label Selector를 통해 정의
+    - Service TYPE
+        > Service : cluster IP
+            · kubernetes 클러스터 내부에서만 통신이 가능한 internal network 가상 IP가 할당
+            · service - pod 간 통신은 kube-proxy가 담당
+            · 서비스 디버깅이나 테스트시 보통 사용
+        > Service : Nodeport
+            · NAT를 이용해 클러스터 내 Node의 고정된 port를 갖는 IP로 serivce를 노출
+            · 외부 트래픽을 서비스에 전달하는 가장 기본적인 방법
+            · 클러스터 외부에서 접근은 : <NodeIP>:<NodeProt>
+            · Port 사용범위 : 30000-32767
+        > Service : Loadbalancer
+            · 클라우드 공급자의 로드밸런서를 이용해 service를 외부로 노출
+            · 외부 로드밸런서를 사용하기 때문에 SPOF에 강함
+            · L4 (TCP) or L7 (HTTP) 레이어를 통해 serivce노출
+
+    - service 생성
+        $ kubectl create deployment nginx-svc --image=nginx
+        $ kubectl get deploy
+        $ kubectl expose delpoyment/nginx-svc --type="NodePort" --port 80 : 서비스 노출
+        $ kubectl get svc -o wide
+        $ kubectl get pod --show-labels
+
+
+Ingress (L7) [ https://kubernetes.io/docs/concepts/services-networking/ingress/ ]
+    - Service type은 아니지만 Service 앞에서 Smart router 및 entry point 역할을 하는 오브젝트
+    - 외부에서 접근 가능한 URL, Load Balancing, SSL Termination 등을 통해 Service에 대한 HTTP 기반 접근 제공
+    - 클러스터에 하나 이상의 실행 중인 Ingress controller가 필요 (e.g. aws-lb-controller, nginx ingress)
+    - 사용 이유
+        > webapp을 만들었을때, 단순히 nodePort를 이용해 서비스를 노출하면 사용자가 30000이상의 포트 넘버를 기억하고 접근해해야함
+        > 일반적으로는 proxy를 두고 80 > 3xxxx로 포워딩하는 layer를 생성
+
+
+Cluster Autoscaler on aws
+    - Amazone EC2 Autoscaling Group 의 기능을 이용해 Cluster Autoscaler 수현
+    - Cluster Autoscaler 가 DEployment 형태로 기동되어 EC2 Autoscaling Group과 상호작용
+
+
+metric server
+    - kubernetes 클러스터 리소스 사용량 데이터를 집계하는 역할
+    - kubelets에서 리소스 메트릭 (ex : 컨테이너 CPU 및 memory 메트릭)을 수집하고 이를 Metrics API를 통해 apiserver에 노출하여 Horizontal Pod Autoscaler 및 Vertical Pod Autoscaler에서 확용
+    - 클러스터 내에 Deployment 형태로 설치
+    - Horizontal Pod Autoscaler
+        > Deployment / Replicaset 의 레플리카 수를 CPU/ 메모리 부하등에 따라 자동으로 스케일 해주는 오브젝트
+        > Pod의 Resource Requests를 기준으로 동작
+        > Metric-server에서 가져온 각 파드의 1분 평균값
+        > 기분 [ cpu, memory, packets-per-second, requests-per-second ]
+        > 컨테이너의 로드가 증가하면 HPA는 우선 클러스터에 충분한 공간이 있든 없든 새 replica를 생성
+        > 리소스가 충분하지 않은 경우 CA는 HPA에서 생성한 Pod가 실행될 노드를 새로 기동
+        > 로드가 감소하면 HPA는 일부 replica를 삭제하고, 결과적으로 활용되지 않는 노드가 생기면 CA가 이러한 노드를 종료
+
+    - Vertical Pod Autoscaler
+        > 컨테이너에 할당하는 CPU / 메모리 리소스의 할당을 자동으로 스케일링 해주는 오브젝트 ( = scale up)
+        > 서비스 적용 전 Pod resource request에 어떤 값이 적정한지 명확하지 않을때 유용
+        > VPC > HPA > CA 수능로 스케일링 동작
+
+
+환경 변수
+    - 개별 컨테이너에 설정해야하는 내용을 환경 변수로 전달
+    - ex) Timezone, DB 접속 정보 등
+    - Pod 정의 파일에 환경변수를 지정하거나 설정 파일을 마운트하여 전달
+    - pod 환경변수 설정
+        $ kubectl apply -f env-pod.yaml
+        # env 확인
+        $ k exec nginx-env -it -- /bin/sh
+        $ (pod shell) env
+
+
+configmap
+    - 워크로드에 필요한 설정 정보를 key-value 형태로 저장할 수 있는 데이터 오브젝트
+    - 간단한 환경변수 부터 nginx.conf 와 같은 설정 파일도 저장 가능
+    - configmap 생성
+        $ kubectl create configmap --save-config test-config --from-literal=app=pink --from-literal=connection.max=100
+        $ kubectl get cm test-config -o yaml | yq .data
+        # 파일에서 값을 참고하여 생성
+        $ kubectl create configmap --save-config test2-config --from-file=nginx.conf
+        $ kubectl get cm test2-config -o yaml | yq .data
+
+
+secret
+    - 워크로드에 필요한 민감 정보를 key-value 형태로 저장할 수 있는 데이터 오브젝트 
+    - base64 인코딩 상태로 저장
+    - secret 생성
+        $ kubectl create secret generic --save-config test-secret --from-literal password=test123
+        $ kubectl get secret test-secret -o yaml | yq .data
+        $ echo -n '<인코드값>' | base64 -d
+        # env 파일 값을 전달하여 생성
+        $ kubectl create secret generic --save-config test2-secret --from-env-file db-secret.txt
+        $ kubectl get secret test2-secret -o yaml | yq .data
+        $ echo -n '<인코드값>' | base64 -d
+    - 모든 정보(configmap / secret)는 ETCD에 저장됨
+
+
+volume
+    - 스토리지 볼륨을 추상화하여 pod와 느슨하게 결합시킨 리소스
+    - 오브젝트의 형태가 아닌 pod 내에서 정의
+    - 볼륨 플러그인
+        > hostPath
+        > nfs
+        > iscsi
+        > cephfs
+        > emptyDir
+    - volume의 한계
+        > 컨테이너 자신만 접근이 가능한 비영구적 볼륨이기 때문에 컨테이너가 재시작할때 유지 할 수 없음
+        > kubernetes 클러스터 레벨에서 볼륨을 관리하기 어려움
+        > volume이 변경될때마다 해당 volume을 사용하는 모든 pod의 설정 변경 필요
+    - Persistent Volume (PV)
+        > 추상화된 가상의 volume 오브젝트로, 별도의 정의 및 생성하여 pod와 연결
+    - Persistent Volume Claim (PVC)
+        > PV를 요청하는 오브젝트
+        > 용량, label 등을 기반으로 PV에 대한 요청이 들어오면 스케줄러가 현재 가지고 있는 PV에서 적당한 볼륨을 할당
+    - Storage Class
+        > 사용할 스토리지의 '클래스'를 정의
+        > 각 프로바이더 (aws, gcp 등)가 제공하는 볼륨의 종류에 따라 고유한 파라미터를 가짐 
+    - dynamic provisioning
+        > on-demand로 스토리지 볼륨을 자동 생성할 수 있는 메커니즘
+        > StorageClass를 기반으로 동작하여, 관리자가 필요한 StorageClass를 정의하여 동적생성을 할때 필요한 파라미터를 volume provisioner(예: AWS EBS)에 전달
+        > StorageClass 에 정의한 PV가 없는 경우 동적으로 PV를 생성하여 PVC에 할당
+        
+
+ServiceAccount
+    - 사람이 아닌, machine이 사용하는 account (ex: 프로메테우스, 젠킨스)
+    - 사용자 어카운트는 kubernetes 관리 대상이 아님
+    - Pod내 프로세스에 identity를 제공
+    - 모든 namespace 는 default service account가 있으며, 기본 kubernetes api를 사용할 수 있는 제한된 권한을 제공
+    - role 생성 (sa : ServiceAccount)
+        $ kubectl create sa dev-sa
+        $ kubectl apply -f role.yaml
+        $ kubectl apply -f devsa-binding.yaml
+        # 확인
+        $ kubectl get roles
+        $ kubectl get rolebindings
+        $ kubectl auth can-i create configmap --as system:serviceaccount:default:dev-sa
+        $ kubectl auth can-i create deployment --as system:serviceaccount:default:dev-sa
+
+
+Network policy
+    - Pod 내부로 들어오거나 외부로 나가는 트래픽을 허용하고 거부하는 정책을 설정할 수 있는 오브젝트
+    - 기본적으로 Whitelist 형식
+    - CNI를 사용하는 것이 전제
