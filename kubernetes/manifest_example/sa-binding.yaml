@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoldBinding
+metadata:
+  name: devsa-test-binding
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: dev-sa
+    apiGroup: ""
+roleRef:
+  kind: Role
+  name: test-role
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Rold
+metadata:
+  name: test-role
+  namespace: default
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list", "get", "create", "update"]
+    resourceNames: ["blue", "orange"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create"]
