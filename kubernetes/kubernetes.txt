@@ -1,0 +1,176 @@
+쿠버네티스 : 컨테이너화된 워크로드와 서비스를 관리하기 위한 오픈소스
+    [ 컨테이너 오케스트레이션 플랫폼 ]
+
+    orchestration이 필요한 이유
+        - 자동화된 스케일링
+        - 자동화된 롤아웃과 롤백
+        - 자동화된 복구 (self-healing)
+        - 자동화된 빈 패킹 (bin packing)
+        - 시크릿과 구성 관리
+        - 서비스 디스커버리와 로드 밸런싱
+        - 스토리지 오케스트레이션
+        - 선언적 코드를 사용한 운영 (IaC)
+
+    kubernetes는 오픈소스, 가장 풍부한 에코시스템
+    kubernetes는 everyting as code를 구현
+    kubernetes는 어디서나 구동 가능 (onprem, private/public cloud .. local)
+    구글에 넘쳐나는 kubernetes reference...
+
+    Control plane (Master node) : kubernetes 전체를 통제/관리
+        kuber-apiserver
+        etcd
+        kube-scheduler
+        kube-controller-manager (cloud-controller-manager)
+
+    Data plane (Worker node) : 실제 사용자의 애플리케이션 배포
+        kubelet
+        kube-proxy
+        container runtime
+
+    구축 환경
+        로컬 환경 : 물리머신 내에서 구축, 대부분 테스트 혹은 스터디용
+            - Minicube
+                > 쿠버네티스를 로컬에서 실행할 수 있는 도구
+                > 쿠버네티스를 공부하거나 일상적인 개발 작업 수행에 사용
+                > 단일 노드 all in one 구성으로 이중화가 보장되지 않기 때문에 상용에서 사용 불가
+                > 로컬 가상 머신에 쿠버네티스를 구성하기 때문에 하이퍼바이저 설치 필요
+                > kubectl 사용
+            - Docker Desktop for Mac/Windows
+
+        Manual 구축 with 도구 : 도구를 사용해서 원하는 곳에 클러스터를 구축
+            - kubeadm, kops, Rancher ...
+
+        관리형 kubernetes 서비스 (CSP 제공) : 퍼블릭 클라우드에서 제공하는 관리형 서비스 사용
+            - AWS EKS
+            - GCP GKE
+            - Azure AKS
+
+    kubectl : kubernetes 클러스터와 통신하기 위한 CLI 도구
+    
+    kubeconfig : 클러스터 인증 정보와 컨텍스트
+        - kubectl이 kubenetes와 통신할때 필요한 접속 대상의 서버정보, 인증 정보 등을 정의
+        - 기본 위치 : ~/.kube/config
+            > cluster
+            > users
+            > context
+            > current-context
+        - kubeconfig 컨텍스트
+            > kubectl config use-context minikube : 컨텍스트 전환
+            > kubectl config current-context : 현재 컨텍스트 확인
+            > kubectl config get-context : 컨텍스트 목록 조화
+        - kubeconfig 컨텍스트 내용 변경 : yaml 파일 편집 or kubectl
+
+    minikube / kubectl 사용 실습 명령어
+        > kubectl get node : 노드 확인
+            kubectl get node <node name> -o yaml : yaml 파일로 확인
+        > kubectl get ns : 네임스페이스 확인
+        > kubectl get pod : pod 확인
+            kubectl get pod -A
+            kubectl get all
+            kubectl get all -A 
+
+    pod 띄우기
+        > kubectl run nginx --image=nginx
+        > kubectl get pod
+        > kubectl describe pod nginx
+
+        > minikube dashboard : 미니큐브 대시보드 확인
+
+    pod 삭제
+        > kubectl delete pod nginx
+
+    minikube 정리
+        > minikube stop
+        > minikube status
+        > kubectl config current-context
+        > minikube delete : 미니큐브 삭제
+
+    etcd 
+        - 쿠버네티스에서 필요한 모든 데이터를 키-값 형태로 저장하는 데이터베이스
+        - etcd가 다운되면 모든 컴포넌트가 미아가 되기 때문에 가용성이 매우 중요
+        - 클러스터링하여 분산 실행하는 RSM (Replicated State machine) 구조
+
+    ETCDctl
+        - ETCD를 다루기 위한 유틸리티
+        - api version 2와 3이 있음 (설정이 없으면 기본적으로 v2를 사용)
+        - ETCDCTL이 ETCD API Server에 인증할 수 있도록 인증서 파일 경로 지정 필요
+
+        ETCDctl 로 클러스터 정보 조회
+            > kubectl exec -it
+
+    kube-apiserver
+        - 쿠버네티스 API를 제공하는 핵심 구성 요소
+        - 쿠버네티스 프론트엔드로 클러스터로 온 요청의 유효성을 검증
+        - 다른 컴포넌트 간 통신을 중재
+        - kubectl 유틸리티가 접근하는 주체
+
+    kube-scheduler
+        - 클러스터 안에서 자원 할당이 가능한 노드 중 알맞은 노드를 선택하는 역할
+        - Label / Selector / Affinity / Taint / Tolerantion 기능화 함께 동작
+        - 없으면 pod를 manual scheduling 해야함
+
+        - pod 스케줄링 필요성
+            > 머신러닝 워크로드를 돌리는 특정 pod는 GPU가 탑재된 node에서 돌아야함
+            > consumer들은 네트워크 intensive하므로 전용 node group을 쓰고 싶다
+            > 팀별로 node를 나눠서 사용하고 싶을때
+
+        - pod 스케줄링 분류
+            > 사용자가 특정 노드에 pod를 배치하고 싶을때
+                [ nodeSelector, Node Affinity, Node anti-affinity, inter Pod affinity, inter pod anti-affinity ]
+            > 관리자가 특정 노드에 pod가 배치되는 것을 막고 싶을때
+                [ Taints, Tolerantions ]
+            
+        - Taints and Tolerantion ( 노드에 설정 )
+            > 어떤 pod가 어떤 node에 스케줄링 될 수 있는지를 제한
+            > kubernetes의 control node에는 pod가 스케줄링 되지않도록 taint가 되어있음
+            > Taints : node가 가지게 되는 성격
+            > Tolerantion : pod가 가지게 되는 taint에 대한 Tolerantion
+
+        - Labels and Selector (Affinity)
+            > nodeSelector 
+                노드에는 라벨을 할당하고, 파드에는 nodeSelector 필드를 추가하여 특정 노드에서 구동되도록 함
+                다만, nodeSelector는 여러 값을 할당하거나 not 예외처리를 하거나 하는등을 하기는 어려움
+            > nodeAffinity
+                여러 advanced 할당을 할 수 있는 만큼 문법이 다소 복잡
+
+    kube-controoler-manager
+        - 다양한 컨트롤러를 실행하는 구성 요소
+        - (노드, 잡, 엔드포인트, 레플리케이션)컨트롤러 등 각 오브젝트를 관할
+        - 동작 예시
+            > 노드에 문제가 생겼을때의 노드 컨트롤러 동작
+                5s마다 status check를 하다가 (node monitor period)
+                heartbeat 가 도착하지 않으면 40s를 대기하고 unreachable로 마킹하고 (node monitor grace period)
+                추가로 5m을 더 대기 (pod eviction timeout)
+                복구되지 않으면 해당 node의 pod들을 정상 node로 재배포 (pod가 replica set에 해당되는 경우)
+        - cloud-controller-manager
+            > 쿠버네티스의 컨트롤러들을 클라우드 서비스 API와 연결해서 관리하는 컴포넌트
+            > CSP에 특화된 컨트롤러만을 관리
+            > on prem환경인 경우 이 컴포넌트는 없음
+
+    kubelet
+        - 각 kubenetes 노드에서 동작하는 node agent
+        - 컨테이너 런타임과 연계하여 컨테이너의 기동 및 정지 등을 관리
+        - 파드 스펙 설정을 kube-apiserver로부터 전달받아 파드 컨테이너의 실행을 직접적으로 관리
+        - pod가 아닌 프로세스의 형태로 뜸
+
+    kube-proxy
+        - 클러스터 내 각 노드에서 실행되는 네트워크 프록시 [서버와 클라이언트 사이에서 중계기로서 대리로 통신을 수행하는 기능을 '프록시']
+        - 가상 네트워크의 동작을 관리
+        - IP translation과 라우팅
+        - kube-proxy 네트워크 모드
+            > userspace > iptables > ipvs로 진화
+            > ipvs가 더 다양한 로드밸런싱 알고리즘을 갖고 있고 더 높은 성능을 냄
+            > 기본은 iptables사용 mode=''면 default
+
+    container-runtime 
+        - 실제로 컨테이너를 실행시키는 런타임 환경
+        - 가장 많이 사용하는 런타임으로 Docker를 주로 사용
+            > container d, CRI-O, Docker Engine, Mirantis Container Runtime
+        - 고수준과 저수준 런타임
+            > 고수준 (high-level) : container D, CRI-O, docker, ...
+            > 저수준 (low-level) : runc, runv
+
+    coredns
+        - kubenetes 클러스터 내부의 주소 해석이나 서비스 디스커버리에 사용되는 내부 DNS 서버 (Add-on)
+        - kube 1.12 버전 전에는 kube-dns라는 이름이었으나, 이후에는 CoreDns라는 이름 사용
+        
