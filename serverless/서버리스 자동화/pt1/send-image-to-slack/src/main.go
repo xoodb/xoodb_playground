@@ -13,7 +13,7 @@ import (
 
 const (
 	AwsRegion = "ap-northeast-2"
-	ChannelId = "C06H1UCHND8"
+	ChannelId = ""
 	PreURL    = "https://devops-slack-image-search.s3.ap-northeast-2.amazonaws.com"
 )
 
@@ -78,7 +78,7 @@ func Handler(request Request) (Response, error) {
 	sess := getAwsSession()
 
 	//get SlackToken from parameter store
-	slackToken := "xoxb-6592617444385-6579856795619-3KGHHXIySpUgBwNnwATNfcei" // AWS 에서 가져오는 로직으로 바꾸는걸 추천
+	slackToken := "slack_api_token" // AWS 에서 가져오는 로직으로 바꾸는걸 추천
 
 	//send slack message
 	err := sendMessageToSlack(sess, slackToken, searchKeyword)
