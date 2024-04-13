@@ -1,0 +1,62 @@
+1. Golang 기본 문법
+2. Golang과 Cobra library를 활용한 나만의 CLI 만들어 보기
+3. Slack 명령어와 AWS Lambda를 활용한 자동화
+4. AWS Lambda를 활용한 유저 생성 자동화
+
+server + less > 서버가 없는 환경 [ 내부적의로 서버를 띄워서 실행시킴 ]
+    필요한 컴퓨팅 리소스와 스토리지만 동적으로 할당한 다음 그 부분에 대해서만 비용을 청구
+    기능을 위한 모든 환경을 구성하는 것이 아닌 클라우드 제공 업체의 서비스를 이용
+    서버리스로 구성된 서비스는 계속 도는 것이 아닌 특정 이벤트로 트리거가 되는 경우, 실행
+    경제적이며 자원을 효율적으로 사용
+    대포적인 aws 서버리스 서비스인 Lambda는 백만건당 0.2USD (실행 속도, 환경에 따라 다름 )
+
+BaaS (Backend as a service)
+    어플리케이션 개발 시 요구되는 복잡한 Backend 기능을 개발자가 직접 갭라하지 않고 클라우드 공급자가 제공하는 서비스 이용
+    ex) firebase, Auth0
+
+FaaS (Function as a service)
+    사용자가 사용하는 기능을 함수 단위로 나누어 구현하고 이를 서비스하는 형태
+    Event-Driven 구조로 많이 작성되며, ms단위와 함수가 돌아가는 환경의 성능 단위로 과금
+    ex) AWS Lambda, Google Cloud Functions, Microsoft Azure Functions
+
+
+장점
+    비용 절감
+    빠른 개발과 배포
+    높은 확장성
+    어플리케이션 로직에만 집중 가능
+
+단점
+    Local Data 활용 불가
+    벤더 종속
+    긴 시간 작업에 불리
+    Cold start 문제
+
+
+서버리스 프레임워크
+    서버리스 환경에서 사용할 기능을 만든 후 환경설정, 배포, 디버깅 등을 해야함
+    이 과정을 하나하나 수작업으로 해주는 것이 아닌 프레임워크를 사용
+    > 환경 및 설정 관리, 배포 등을 쉽게 할 수 있음
+
+    Serverless Framework
+    Serverless 서비스와 연결되는 서비스 (AWS EventBridge, sns등)를 구성하고 각 환경에 맞게 작성한 코드를 쉽게 배포하고 관리하기 위한 프레임워크
+        JS, node, python, go, ruby, C샵 등 다양한 언어와다양한 CSP 지원
+        다양한 Plugin 지원과 yaml 파일 하나로 통합 관리 및 배포 가능
+
+    service
+        여러 Functions 나 resource를 하나로 묶어둔 개념
+
+    provider
+        구성하는 환경에 대한 설정, 어떤 환경인지, 어떤 언어와 runtime을 사용하는지, 어떤 IAM Role을 사용하는지 등을 적어서 사용
+
+    Plugin
+        serverless 기능을 확장할 때 많이 사용되는 기능. 대표적으로 Datadog와 연동을 하는 경우, ' serverless plugin datadog' 이라는 plugin 사용
+
+    Package
+        배포시에 어떤 것들이 포함될지 결정하는 요소
+
+    Functions
+        Lambda가 동작할 때, 실제로 동작하는 binary나 method를 지정
+
+    resource
+        Lambda가 동작할 때 trigger가 되거나 함게 사용하는 AWS 서비스들

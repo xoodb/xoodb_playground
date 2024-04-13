@@ -1,0 +1,41 @@
+런타임필요 x
+바로 배포 가능
+비동기 작업 처리
+
+장점
+    빠른 속도
+    바이너리를 통한 배포
+    컨벤션 통일
+    Goroutin
+    Garbage Collection
+    모듈화 및 패키지
+
+단점
+    까다로운 라이브러리 관리
+    강력한 프렝미워크의 부재
+    Go를 도입한 회사가 많이 없다
+
+Go 기반 오픈소스 프로젝트
+    Docker
+    Kubernetes
+    OpenShift
+    Terraform
+    Istio
+    ArgoCD
+    Prometheus
+    InfulxDB
+
+Naming Convention
+    MixedCaps or mixedCaps
+        - MixedCaps > 외부 노출 (Public), mixedCaps > 내부 사용 (private)
+    Package names
+        - lower case, Single-word name
+    Getter/Setter names
+        - 특정 객체(ex. user)에 Getter 명은 User, Setter 명은 SetUser로 네이밍
+    Interface name
+        - 하나의 메소드만 있는 Interface의 경우 Method Name + er = Inerface Name
+    Variables names
+        - 기본적으로 Canmel case, map/for loop 등은 single letter name 사용 가능
+          Unique Name은 그대로 사용
+
+https://devhints.io/go : golang 문법 예시
