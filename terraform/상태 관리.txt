@@ -1,0 +1,33 @@
+terraform은 인프라나 성정에 대해 무조건 state(상태)로 저장
+state는 기본적으로 terraform.tfstate라는 로컬 파일에 저장
+    backend가 remote인 경우 환경마다 다름
+
+state는 terraform 으로 선언된 설정과 실제 인프라 객체를 매핑하기 위해 존재함
+    state가 없으면 terraform 으로 인프라 관리 불가
+
+
+state 파일시스템 문제점
+
+state 파일이 저장된 위치의 성능에 따라 terraform 성능에 영향 발생
+    plan/apply 실행시 매번 로컬에 저장된 state와 api로 호출된 값 비교
+    -refresh=false 옵션을 통해서 로컬에 저장된 state만으로 비교 가능
+    remote backend 사용시 환겨엥 따라서 추가 지연 발생 가능
+
+
+S3 문제점
+
+하나의 terraform module을 여러명이서 관리할때는 state파일을 공유해야함
+    backend를 remote로 사용
+하지만 s3와 같은 파일시스템을 사용할 경우, 동시에 동일한 state 파일에 접근하면 충돌 발생
+state 파일도 손상, 인프라 설정도 꼬임
+state locking 하기 위해서 dynamoDB설정도 추가 필요
+
+
+state 파일 분리
+
+여러개의 환경을 관리할때 lockin이 발생하여 수정을 못하는 경우가 발생
+    A가 운영환경에 배포하는 동안 locking이 발생하여
+    B는 개발환경에서 테스트가 불가능
+환경별로 상태 파일을 분리가 필요
+    디렉토리를 분리(환경별로 root module 생성)
+    workspace 분리
