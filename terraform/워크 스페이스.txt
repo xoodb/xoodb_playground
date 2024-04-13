@@ -1,0 +1,16 @@
+workspace
+    환경에 따라서 state를 관리하고자 할때 사용하는 기능
+    workspace별로 state가 별도로 저장됨
+    일부 backend만 multiple workspace 지원
+        kubernetes
+        local
+        postgres
+        remote(terraform cloud)
+        s3
+
+terraform init -migrate-state : 여러 워크스페이스 구분
+
+terraform workspace select "워크스페이스 이름" : 워크 스페이스 이동
+terraform workspace new "이름" : 워크 스페이스 생성
+terraform workspace delete "이름" : 워크 스페이스 삭제
+terraform workspace list : 워크 스페이스 리스트 출력 현재 위치도
