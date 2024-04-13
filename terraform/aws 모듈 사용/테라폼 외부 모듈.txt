@@ -1,0 +1,8 @@
+terraform registry
+    다양한 provider, module, policy 제공
+    https://registry.terraform.io
+
+다양한 AWS module
+    https://registry.terraform.io/namespaces/terraform-aws-modules
+
+다운로드는 github에 저장되어있는 소스를 가져오는것이기 때문에 git이 반드시 설치되어 있어야한다
