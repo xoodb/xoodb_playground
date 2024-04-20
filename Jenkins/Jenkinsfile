@@ -1,0 +1,40 @@
+pipeline {
+    agent any
+    stages {
+        // git clone check
+        stage('Prepare') {
+            steps {
+                slackSend (color: '#00FFFF', message: "#${env.BUILD_NUMBER} start Test")
+                deleteDir()
+                checkout scm // 연결된 github repo clone
+            }
+            post {
+                    success {
+                        echo 'Repository clone success'
+                    }
+                    failure {
+                        echo 'Repository clone failure'
+                        slackSend (color: '#FF0000', message: "GitHub Repository clone Failure")
+                    }
+            }
+        }
+
+        stage('change index') {
+            // 배포 테스트
+            steps {
+                sh "sed -i 's#version.*#version ${currentBuild.number}#g' index.html"
+                sh "cp index.html /var/www/html/index.html"
+            }
+            post {
+                    success {
+                        echo 'Index change Success!'
+                        slackSend (color: '#00FF00', message: "Index change Success!")
+                    }
+                    failure {
+                        echo 'Index change failure!'
+                        slackSend (color: '#FF0000', message: "Index change Success!")
+                    }
+            }
+        }
+    }
+}
